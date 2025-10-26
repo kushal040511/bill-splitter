@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Splitter</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .person-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .person-item input {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .remove-btn {
+            background: #dc3545;
+            padding: 8px 12px;
+        }
+        
+        .remove-btn:hover {
+            background: #c82333;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .result-item {
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .total-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Bill Splitter</h1>
+        
+        <div class="input-group">
+            <label for="billAmount">Total Bill Amount ($)</label>
+            <input type="number" id="billAmount" placeholder="Enter total bill amount" step="0.01">
+        </div>
+        
+        <div class="input-group">
+            <label for="tipPercentage">Tip Percentage (%)</label>
+            <select id="tipPercentage">
+                <option value="0">No Tip</option>
+                <option value="10">10%</option>
+                <option value="15" selected>15%</option>
+                <option value="18">18%</option>
+                <option value="20">20%</option>
+                <option value="25">25%</option>
+                <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="customTip" placeholder="Enter custom tip %" style="display: none; margin-top: 10px;">
+        </div>
+        
+        <div class="input-group">
+            <label>People Sharing the Bill</label>
+            <div id="peopleList">
+                <div class="person-item">
+                    <input type="text" placeholder="Person name" class="person-name">
+                    <button type="button" class="remove-btn" onclick="removePerson(this)">Remove</button>
+                </div>
+            </div>
+            <button type="button" onclick="addPerson()">Add Person</button>
+        </div>
+        
+        <button type="button" onclick="calculateSplit()" style="width: 100%; padding: 15px; font-size: 18px;">Calculate Split</button>
+        
+        <div id="results" class="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        let personCount = 1;
+        
+        document.getElementById('tipPercentage').addEventListener('change', function() {
+            const customTipInput = document.getElementById('customTip');
+            if (this.value === 'custom') {
+                customTipInput.style.display = 'block';
+            } else {
+                customTipInput.style.display = 'none';
+            }
+        });
+        
+        function addPerson() {
+            personCount++;
+            const peopleList = document.getElementById('peopleList');
+            const personDiv = document.createElement('div');
+            personDiv.className = 'person-item';
+            personDiv.innerHTML = `
+                <input type="text" placeholder="Person name" class="person-name">
+                <button type="button" class="remove-btn" onclick="removePerson(this)">Remove</button>
+            `;
+            peopleList.appendChild(personDiv);
+        }
+        
+        function removePerson(button) {
+            const peopleList = document.getElementById('peopleList');
+            if (peopleList.children.length > 1) {
+                button.parentElement.remove();
+                personCount--;
+            } else {
+                alert('You need at least one person to split the bill!');
+            }
+        }
+        
+        function calculateSplit() {
+            const billAmount = parseFloat(document.getElementById('billAmount').value);
+            const tipPercentageSelect = document.getElementById('tipPercentage').value;
+            let tipPercentage;
+            
+            if (tipPercentageSelect === 'custom') {
+                tipPercentage = parseFloat(document.getElementById('customTip').value) || 0;
+            } else {
+                tipPercentage = parseFloat(tipPercentageSelect);
+            }
+            
+            const personNames = Array.from(document.querySelectorAll('.person-name')).map(input => input.value.trim()).filter(name => name !== '');
+            
+            // Validation
+            if (isNaN(billAmount) || billAmount <= 0) {
+                showError('Please enter a valid bill amount.');
+                return;
+            }
+            
+            if (personNames.length === 0) {
+                showError('Please add at least one person.');
+                return;
+            }
+            
+            // Calculations
+            const tipAmount = (billAmount * tipPercentage) / 100;
+            const totalAmount = billAmount + tipAmount;
+            const perPersonAmount = totalAmount / personNames.length;
+            const perPersonTip = tipAmount / personNames.length;
+            const perPersonBill = billAmount / personNames.length;
+            
+            // Display results
+            displayResults({
+                billAmount,
+                tipAmount,
+                tipPercentage,
+                totalAmount,
+                personNames,
+                perPersonAmount,
+                perPersonTip,
+                perPersonBill
+            });
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <h3>Bill Breakdown</h3>
+                <div class="result-item">
+                    <strong>Original Bill:</strong> $${data.billAmount.toFixed(2)}
+                </div>
+                <div class="result-item">
+                    <strong>Tip (${data.tipPercentage}%):</strong> $${data.tipAmount.toFixed(2)}
+                </div>
+                <div class="total-amount">
+                    <strong>Total Amount:</strong> $${data.totalAmount.toFixed(2)}
+                </div>
+                
+                <h3>Per Person Breakdown</h3>
+            `;
+            
+            data.personNames.forEach(name => {
+                html += `
+                    <div class="result-item">
+                        <strong>${name}:</strong><br>
+                        Bill Share: $${data.perPersonBill.toFixed(2)}<br>
+                        Tip Share: $${data.perPersonTip.toFixed(2)}<br>
+                        <strong>Total: $${data.perPersonAmount.toFixed(2)}</strong>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="error">${message}</div>`;
+            resultsDiv.style.display = 'block';
+        }
+        
+        // Initialize with some default names
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstPersonInput = document.querySelector('.person-name');
+            if (firstPersonInput) {
+                firstPersonInput.placeholder = 'Enter first person\'s name';
+            }
+        });
+    </script>
+</body>
+</html>
